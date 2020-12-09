@@ -1,0 +1,2 @@
+C:/Users/shelt/Documents/GitHub/VulkanAPI_Course/VulkanCourseApp/ExternalLibs/GLM/glm/out/build/x64-Debug (default)/CMakeFiles/edit_cache.dir
+C:/Users/shelt/Documents/GitHub/VulkanAPI_Course/VulkanCourseApp/ExternalLibs/GLM/glm/out/build/x64-Debug (default)/CMakeFiles/rebuild_cache.dir
