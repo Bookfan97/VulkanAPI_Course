@@ -24,8 +24,11 @@ void initWindow(std::string wName= "Test Window", const int width = 1920, const 
 	window = glfwCreateWindow(width, height, wName.c_str(), nullptr, nullptr);
 }
 
+bool VK_DEBUG;
+
 int main()
 {
+	VK_DEBUG = true;
 	//Create Window
 	initWindow("Test Window", 1920, 1080);
 
@@ -34,7 +37,7 @@ int main()
 	{
 		return EXIT_FAILURE;
 	}
-	
+
 	//Loop Until Close
 	while(!glfwWindowShouldClose(window))
 	{
@@ -47,6 +50,6 @@ int main()
 	//Destroy Window and Stop GLFW
 	glfwDestroyWindow(window);
 	glfwTerminate();
-	
+
 	return 0;
 }
