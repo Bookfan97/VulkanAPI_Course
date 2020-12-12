@@ -11,7 +11,7 @@ VulkanRenderer::~VulkanRenderer()
 int VulkanRenderer::init(GLFWwindow* newWindow)
 {
 	window = newWindow;
-	try 
+	try
 	{
 		createInstance();
 		createDebugCallback();
@@ -21,7 +21,7 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 		createSwapchain();
 		createGraphicsPipeline();
 	}
-	catch (const std::runtime_error &e)
+	catch (const std::runtime_error& e)
 	{
 		printf("ERROR: %s\n", e.what());
 		return EXIT_FAILURE;
@@ -49,11 +49,10 @@ void VulkanRenderer::cleanup()
 
 void VulkanRenderer::createInstance()
 {
-	if (this->enableValidationLayers && !checkValidationLayerSupport()) 
+	if (this->enableValidationLayers && !checkValidationLayerSupport())
 	{
 		throw std::runtime_error("Validation layers requested, but not available!");
 	}
-
 
 	//Information about the application itself (developer use only)
 	VkApplicationInfo appInfo = {};
@@ -64,7 +63,6 @@ void VulkanRenderer::createInstance()
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);			//Custome Engine Version
 	appInfo.apiVersion = VK_API_VERSION_1_0;					//Vulkan API Version
 
-	
 	//Creation information for a vulkan instance
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -224,7 +222,7 @@ void VulkanRenderer::createSwapchain()
 	uint32_t imageCount = swapChainDetails.surfaceCapabilities.minImageCount + 1;
 
 	//Check if image count is greater than the max, if 0 it's limitless
-	if (swapChainDetails.surfaceCapabilities.maxImageCount > 0 && 
+	if (swapChainDetails.surfaceCapabilities.maxImageCount > 0 &&
 		swapChainDetails.surfaceCapabilities.maxImageCount < imageCount)
 	{
 		imageCount = swapChainDetails.surfaceCapabilities.maxImageCount;
@@ -252,8 +250,8 @@ void VulkanRenderer::createSwapchain()
 	if (indices.graphicsFamily != indices.presentationFamily)
 	{
 		uint32_t queueFamilyIndices[] = {
-			(uint32_t) indices.graphicsFamily,
-			(uint32_t) indices.presentationFamily}
+			(uint32_t)indices.graphicsFamily,
+			(uint32_t)indices.presentationFamily }
 		;
 		swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;	//Image share handling
 		swapchainCreateInfo.queueFamilyIndexCount = 2;						//Num queues to share images
@@ -324,7 +322,7 @@ void VulkanRenderer::createGraphicsPipeline()
 	fragmentShaderCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;	//Shader stage name
 	fragmentShaderCreateInfo.module = fragmentShaderModule;			//Shader module to be used by stage
 	fragmentShaderCreateInfo.pName = "Main";						//Entry point into shader
-	
+
 	//Create pipeline
 	//Stage creation array
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertexShaderCreateInfo, fragmentShaderCreateInfo };
@@ -332,7 +330,6 @@ void VulkanRenderer::createGraphicsPipeline()
 	//Destroy shader module, no longer needed after pipeline created
 	vkDestroyShaderModule(mainDevice.logicalDevice, fragmentShaderModule, nullptr);
 	vkDestroyShaderModule(mainDevice.logicalDevice, vertexShaderModule, nullptr);
-	
 }
 
 void VulkanRenderer::getPhysicalDevice()
@@ -351,7 +348,7 @@ void VulkanRenderer::getPhysicalDevice()
 	std::vector<VkPhysicalDevice> deviceList(deviceCount);
 	vkEnumeratePhysicalDevices(instance, &deviceCount, deviceList.data());
 
-	for (const auto	&device : deviceList)
+	for (const auto& device : deviceList)
 	{
 		if (checkDeviceSuitable(device))
 		{
@@ -437,18 +434,18 @@ bool VulkanRenderer::checkValidationLayerSupport()
 	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 	std::vector<VkLayerProperties> availableLayers(layerCount);
 	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-	for (const char* layerName : this->validationLayers) 
+	for (const char* layerName : this->validationLayers)
 	{
 		bool layerFound = false;
-		for (const auto& layerProperties : availableLayers) 
+		for (const auto& layerProperties : availableLayers)
 		{
-			if (strcmp(layerName, layerProperties.layerName) == 0) 
+			if (strcmp(layerName, layerProperties.layerName) == 0)
 			{
 				layerFound = true;
 				break;
 			}
 		}
-		if (!layerFound) 
+		if (!layerFound)
 		{
 			return false;
 		}
@@ -568,7 +565,7 @@ VkSurfaceFormatKHR VulkanRenderer::chooseBestSurfaceFormat(const std::vector<VkS
 	}
 
 	//If restricted, search for optimal format
-	for (const auto &format : formats)
+	for (const auto& format : formats)
 	{
 		if ((format.format == VK_FORMAT_R8G8B8A8_UNORM || format.format == VK_FORMAT_B8G8R8A8_UNORM) && format.colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR)
 		{
@@ -583,14 +580,14 @@ VkSurfaceFormatKHR VulkanRenderer::chooseBestSurfaceFormat(const std::vector<VkS
 VkPresentModeKHR VulkanRenderer::chooseBestPresentationMode(const std::vector<VkPresentModeKHR>& presentationModes)
 {
 	//Look for mailbox presentation mode
-	for (const auto &presentationMode : presentationModes)
+	for (const auto& presentationMode : presentationModes)
 	{
 		if (presentationMode == VK_PRESENT_MODE_MAILBOX_KHR)
 		{
 			return presentationMode;
 		}
 	}
-	
+
 	//If can't find, use default (must always be present)
 	return  VK_PRESENT_MODE_FIFO_KHR;
 }
@@ -598,7 +595,7 @@ VkPresentModeKHR VulkanRenderer::chooseBestPresentationMode(const std::vector<Vk
 VkExtent2D VulkanRenderer::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfaceCapabilities)
 {
 	//Current extent is at numeric limits, extent can very. Otherwise, it's the size of the window
-	if(surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+	if (surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
 	{
 		return surfaceCapabilities.currentExtent;
 	}
@@ -617,16 +614,16 @@ VkExtent2D VulkanRenderer::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surf
 
 		//Surface also defines max/min, clamp values
 		newExtent.width = std::max(
-			surfaceCapabilities.minImageExtent.width, 
+			surfaceCapabilities.minImageExtent.width,
 			std::min(
-				surfaceCapabilities.maxImageExtent.width, 
+				surfaceCapabilities.maxImageExtent.width,
 				newExtent.width
 			)
 		);
 		newExtent.height = std::max(
-			surfaceCapabilities.minImageExtent.height, 
+			surfaceCapabilities.minImageExtent.height,
 			std::min(
-				surfaceCapabilities.maxImageExtent.height, 
+				surfaceCapabilities.maxImageExtent.height,
 				newExtent.height
 			)
 		);

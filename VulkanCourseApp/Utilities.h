@@ -31,7 +31,7 @@ struct SwapchainImage
 	VkImageView imageView;
 };
 
-static std::vector<char> readFile(const std::string &filename)
+static std::vector<char> readFile(const std::string& filename)
 {
 	//Open stream from file
 	std::ifstream file(filename, std::ios::binary | std::ios::ate);

@@ -26,7 +26,7 @@ private:
 		VkPhysicalDevice physicalDevice;
 		VkDevice logicalDevice;
 	} mainDevice;
-	
+
 	VkQueue graphicsQueue;
 	VkQueue presentationQueue;
 	VkSurfaceKHR surface;
@@ -36,9 +36,9 @@ private:
 	//Utility
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
-	
+
 	//----------------------Vulkan Functions------------------------
-	
+
 	//Create Functions
 	void createInstance();
 	void createDebugCallback();
@@ -56,13 +56,13 @@ private:
 	bool checkInstanceExtensionSupport(std::vector<const char*>* checkExtensions);
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 #ifdef VK_DEBUG
-		const bool enableValidationLayers = true;
+	const bool enableValidationLayers = true;
 #else
 	const bool enableValidationLayers = false;
 #endif
-		const std::vector<const char*> validationLayers = {
-			"VK_LAYER_KHRONOS_validation"
-		};
+	const std::vector<const char*> validationLayers = {
+		"VK_LAYER_KHRONOS_validation"
+	};
 	bool checkValidationLayerSupport();
 
 	bool checkDeviceSuitable(VkPhysicalDevice device);
@@ -72,7 +72,7 @@ private:
 	SwapChainDetails getSwapChainDetails(VkPhysicalDevice device);
 
 	//Choose functions
-	VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector <VkSurfaceFormatKHR> &formats);
+	VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector <VkSurfaceFormatKHR>& formats);
 	VkPresentModeKHR chooseBestPresentationMode(const std::vector<VkPresentModeKHR>& presentationModes);
 	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfaceCapabilities);
 
@@ -80,4 +80,3 @@ private:
 	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 	VkShaderModule createShaderModule(const std::vector<char>& code);
 };
-
