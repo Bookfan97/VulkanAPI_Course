@@ -8,6 +8,32 @@ VulkanRenderer::~VulkanRenderer()
 {
 }
 
+bool VulkanRenderer::checkValidationLayerSupport()
+{
+	uint32_t layerCount;
+	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+	std::vector<VkLayerProperties> availableLayers(layerCount);
+	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+	for (const char* layerName : this->validationLayers) {
+		bool layerFound = false;
+
+		for (const auto& layerProperties : availableLayers) {
+			if (strcmp(layerName, layerProperties.layerName) == 0) {
+				layerFound = true;
+				break;
+			}
+		}
+
+		if (!layerFound) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 int VulkanRenderer::init(GLFWwindow* newWindow)
 {
 	window = newWindow;
@@ -17,12 +43,12 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 		GetPhysicalDevice();
 		createLogicalDevice();
 	}
-	catch (const std::runtime_error &e)
+	catch (const std::runtime_error& e)
 	{
 		printf("ERROR: %s\n", e.what());
 		return EXIT_FAILURE;
 	}
-	
+
 	return 0;
 }
 
@@ -35,6 +61,9 @@ void VulkanRenderer::cleanup()
 
 void VulkanRenderer::createInstance()
 {
+	if (this->enableValidationLayers && !checkValidationLayerSupport()) {
+		throw std::runtime_error("Validation layers requested, but not available!");
+	}
 	//Information about the application itself (developer use only)
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -43,7 +72,7 @@ void VulkanRenderer::createInstance()
 	appInfo.pEngineName = "No Engine";							//Custom Engine Name
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);			//Custome Engine Version
 	appInfo.apiVersion = VK_API_VERSION_1_0;					//Vulkan API Version
-	
+
 	//Creation information for a vulkan instance
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -75,12 +104,21 @@ void VulkanRenderer::createInstance()
 	createInfo.ppEnabledExtensionNames = instanceExtensions.data();
 
 	//TODO: Set up validation layers that instance will use
-	createInfo.enabledLayerCount=0;
+	createInfo.enabledLayerCount = 0;
 	createInfo.ppEnabledLayerNames = nullptr;
+
+	if (this->enableValidationLayers) {
+		createInfo.enabledLayerCount = static_cast<uint32_t>(this->validationLayers.size());
+		createInfo.ppEnabledLayerNames = this->validationLayers.data();
+	}
+	else {
+		createInfo.enabledLayerCount = 0;
+		createInfo.ppEnabledLayerNames = nullptr;
+	}
 
 	//Create instance
 	//TODO: 2nd parameter is memory management, look at later
-	VkResult result = vkCreateInstance(&createInfo, nullptr,&instance);
+	VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
 
 	if (result != VK_SUCCESS)
 	{
@@ -92,7 +130,7 @@ void VulkanRenderer::createLogicalDevice()
 {
 	//Get the queue family indices for the chosen physical device
 	QueueFamilyIndices indices = getQueueFamilies(mainDevice.physicalDevice);
-	
+
 	//Physical device features the logical devices will be using
 	VkPhysicalDeviceFeatures device_features = {};
 
@@ -134,12 +172,12 @@ void VulkanRenderer::GetPhysicalDevice()
 	{
 		throw std::runtime_error("No devices found that support Vulkan");
 	}
-	
+
 	//Get list of physical devices
 	std::vector<VkPhysicalDevice> deviceList(deviceCount);
 	vkEnumeratePhysicalDevices(instance, &deviceCount, deviceList.data());
 
-	for (const auto &device : deviceList)
+	for (const auto& device : deviceList)
 	{
 		if (checkDeviceSuitable(device))
 		{
@@ -147,7 +185,6 @@ void VulkanRenderer::GetPhysicalDevice()
 			break;
 		}
 	}
-	
 }
 
 inline bool VulkanRenderer::checkDeviceSuitable(VkPhysicalDevice device)
@@ -155,12 +192,12 @@ inline bool VulkanRenderer::checkDeviceSuitable(VkPhysicalDevice device)
 	//Information about the device itself
 	VkPhysicalDeviceProperties deviceProperties;
 	vkGetPhysicalDeviceProperties(device, &deviceProperties);
-	
+
 	//Information about what the device can do
 	VkPhysicalDeviceFeatures deviceFeatures;
 	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-	printf("%s\n",deviceProperties.deviceName);
+	printf("%s\n", deviceProperties.deviceName);
 
 	QueueFamilyIndices indices = getQueueFamilies(device);
 	return indices.isValid();
@@ -178,12 +215,12 @@ QueueFamilyIndices VulkanRenderer::getQueueFamilies(VkPhysicalDevice device)
 
 	//Check if each queue family has at least one required type of queue
 	int i = 0;
-	for (const auto &queueFamily : queueFamilyList)
+	for (const auto& queueFamily : queueFamilyList)
 	{
 		//check if queue family has at least 1 wueue in hat family
 		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
-			indices.graphicsFamily = i; //if valid, get index	
+			indices.graphicsFamily = i; //if valid, get index
 		}
 
 		//Check if in valid state
@@ -207,7 +244,7 @@ bool VulkanRenderer::checkInstanceExtensionSupport(std::vector<const char*>* che
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
 	//Check if given extensions are available
-	for (const auto &checkExtension : *checkExtensions)
+	for (const auto& checkExtension : *checkExtensions)
 	{
 		bool hasExtension = false;
 		for (const auto extension : extensions)
@@ -218,7 +255,7 @@ bool VulkanRenderer::checkInstanceExtensionSupport(std::vector<const char*>* che
 				break;
 			}
 		}
-		if(!hasExtension)
+		if (!hasExtension)
 		{
 			return false;
 		}

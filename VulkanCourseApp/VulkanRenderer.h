@@ -13,6 +13,16 @@ public:
 	void cleanup();
 	~VulkanRenderer();
 private:
+#ifdef VK_DEBUG
+	const bool enableValidationLayers = true;
+#else
+	const bool enableValidationLayers = false;
+#endif
+
+	const std::vector<const char*> validationLayers = {
+		"VK_LAYER_KHRONOS_validation"
+	};
+	bool checkValidationLayerSupport();
 	GLFWwindow* window;
 
 	//Components
@@ -25,7 +35,7 @@ private:
 	} mainDevice;
 
 	VkQueue graphicsQueue;
-	
+
 	//----------------------Vulkan Functions------------------------
 
 	//Create Functions
@@ -44,6 +54,3 @@ private:
 	//Getter Functions
 	QueueFamilyIndices getQueueFamilies(VkPhysicalDevice device);
 };
-
-
-
