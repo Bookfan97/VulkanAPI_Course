@@ -41,7 +41,7 @@ private:
 
 	//Create Functions
 	void createInstance();
-	void createDebugCallback();
+	//void createDebugCallback();
 	void createLogicalDevice();
 	void createSurface();
 	void createSwapchain();

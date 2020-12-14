@@ -8,13 +8,39 @@ VulkanRenderer::~VulkanRenderer()
 {
 }
 
+bool VulkanRenderer::checkValidationLayerSupport()
+{
+	uint32_t layerCount;
+	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+	std::vector<VkLayerProperties> availableLayers(layerCount);
+	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+	for (const char* layerName : this->validationLayers) {
+		bool layerFound = false;
+
+		for (const auto& layerProperties : availableLayers) {
+			if (strcmp(layerName, layerProperties.layerName) == 0) {
+				layerFound = true;
+				break;
+			}
+		}
+
+		if (!layerFound) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 int VulkanRenderer::init(GLFWwindow* newWindow)
 {
 	window = newWindow;
 	try
 	{
 		createInstance();
-		createDebugCallback();
+		//createDebugCallback();
 		createSurface();
 		getPhysicalDevice();
 		createLogicalDevice();
@@ -94,12 +120,6 @@ void VulkanRenderer::createInstance()
 		instanceExtensions.push_back(glfwExtensions[i]);
 	}
 
-	//// If validation enabled, add extension to report validation debug info
-	//if (validationEnabled)
-	//{
-	//	instanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-	//}
-
 	//Check instance extension supported
 	if (!checkInstanceExtensionSupport(&instanceExtensions))
 	{
@@ -109,16 +129,18 @@ void VulkanRenderer::createInstance()
 	createInfo.enabledExtensionCount = static_cast<uint32_t> (instanceExtensions.size());
 	createInfo.ppEnabledExtensionNames = instanceExtensions.data();
 
-	/*if (validationEnabled)
-	{
-		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-		createInfo.ppEnabledLayerNames = validationLayers.data();
+	//TODO: Set up validation layers that instance will use
+	createInfo.enabledLayerCount = 0;
+	createInfo.ppEnabledLayerNames = nullptr;
+
+	if (this->enableValidationLayers) {
+		createInfo.enabledLayerCount = static_cast<uint32_t>(this->validationLayers.size());
+		createInfo.ppEnabledLayerNames = this->validationLayers.data();
 	}
-	else
-	{
+	else {
 		createInfo.enabledLayerCount = 0;
 		createInfo.ppEnabledLayerNames = nullptr;
-	}*/
+	}
 
 	//Create instance
 	//TODO: 2nd parameter is memory management, look at later
@@ -128,24 +150,6 @@ void VulkanRenderer::createInstance()
 	{
 		throw std::runtime_error("FAILED TO CREATE VULKAN INSTANCE");
 	}
-}
-
-void VulkanRenderer::createDebugCallback()
-{
-	//// Only create callback if validation enabled
-	//if (!validationEnabled) return;
-
-	//VkDebugReportCallbackCreateInfoEXT callbackCreateInfo = {};
-	//callbackCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
-	//callbackCreateInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;	// Which validation reports should initiate callback
-	//callbackCreateInfo.pfnCallback = debugCallback;												// Pointer to callback function itself
-
-	//// Create debug callback with custom create function
-	//VkResult result = CreateDebugReportCallbackEXT(instance, &callbackCreateInfo, nullptr, &callback);
-	//if (result != VK_SUCCESS)
-	//{
-	//	throw std::runtime_error("Failed to create Debug Callback");
-	//}
 }
 
 void VulkanRenderer::createLogicalDevice()
@@ -428,44 +432,19 @@ bool VulkanRenderer::checkDeviceExtensionSupport(VkPhysicalDevice device)
 	return true;
 }
 
-bool VulkanRenderer::checkValidationLayerSupport()
-{
-	uint32_t layerCount;
-	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-	std::vector<VkLayerProperties> availableLayers(layerCount);
-	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-	for (const char* layerName : this->validationLayers)
-	{
-		bool layerFound = false;
-		for (const auto& layerProperties : availableLayers)
-		{
-			if (strcmp(layerName, layerProperties.layerName) == 0)
-			{
-				layerFound = true;
-				break;
-			}
-		}
-		if (!layerFound)
-		{
-			return false;
-		}
-	}
-	return true;
-}
 
 bool VulkanRenderer::checkDeviceSuitable(VkPhysicalDevice device)
 {
-	/*
+	
 	// Information about the device itself (ID, name, type, vendor, etc)
 	VkPhysicalDeviceProperties deviceProperties;
 	vkGetPhysicalDeviceProperties(device, &deviceProperties);
 
-	// Information about what the device can do (geo shader, tess shader, wide lines, etc)
+	//Information about what the device can do
 	VkPhysicalDeviceFeatures deviceFeatures;
 	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-	printf("%s\n",deviceProperties.deviceName);
-	*/
+	printf("%s\n", deviceProperties.deviceName);
 
 	QueueFamilyIndices indices = getQueueFamilies(device);
 
