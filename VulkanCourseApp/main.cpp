@@ -28,7 +28,7 @@ bool VK_DEBUG;
 
 int main()
 {
-	VK_DEBUG = true;
+	VK_DEBUG = false;
 	//Create Window
 	initWindow("Test Window", 1920, 1080);
 

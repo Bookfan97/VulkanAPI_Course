@@ -7,6 +7,10 @@
 #include <vector>
 #include <set>
 #include <algorithm>
+#include <array>
+
+#include "VulkanValidation.h"
+
 class VulkanRenderer
 {
 public:
@@ -33,7 +37,12 @@ private:
 	VkSwapchainKHR swapchain;
 	std::vector<SwapchainImage> swapChainImages;
 
-	//Utility
+	// - Pipeline
+	VkPipeline graphicsPipeline;
+	VkPipelineLayout pipelineLayout;
+	VkRenderPass renderPass;
+
+	// - Utility
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
 
@@ -41,10 +50,11 @@ private:
 
 	//Create Functions
 	void createInstance();
-	//void createDebugCallback();
+	void createDebugCallback();
 	void createLogicalDevice();
 	void createSurface();
 	void createSwapchain();
+	void createRenderPass();
 	void createGraphicsPipeline();
 
 	//Get Functions
@@ -55,14 +65,6 @@ private:
 	//Check Funtions
 	bool checkInstanceExtensionSupport(std::vector<const char*>* checkExtensions);
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-#ifdef VK_DEBUG
-	const bool enableValidationLayers = true;
-#else
-	const bool enableValidationLayers = false;
-#endif
-	const std::vector<const char*> validationLayers = {
-		"VK_LAYER_KHRONOS_validation"
-	};
 	bool checkValidationLayerSupport();
 
 	bool checkDeviceSuitable(VkPhysicalDevice device);
@@ -71,10 +73,10 @@ private:
 	QueueFamilyIndices getQueueFamilies(VkPhysicalDevice device);
 	SwapChainDetails getSwapChainDetails(VkPhysicalDevice device);
 
-	//Choose functions
-	VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector <VkSurfaceFormatKHR>& formats);
-	VkPresentModeKHR chooseBestPresentationMode(const std::vector<VkPresentModeKHR>& presentationModes);
-	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfaceCapabilities);
+	// -- Choose Functions
+	VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &formats);
+	VkPresentModeKHR chooseBestPresentationMode(const std::vector<VkPresentModeKHR> presentationModes);
+	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &surfaceCapabilities);
 
 	//Create Functions
 	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
