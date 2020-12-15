@@ -21,6 +21,10 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 		createSwapchain();
 		createRenderPass();
 		createGraphicsPipeline();
+		createFramebuffers();
+		createCommandPool();
+		createCommandBuffers();
+		recordCommands();
 	}
 	catch (const std::runtime_error& e)
 	{
@@ -33,6 +37,11 @@ int VulkanRenderer::init(GLFWwindow* newWindow)
 
 void VulkanRenderer::cleanup()
 {
+	vkDestroyCommandPool(mainDevice.logicalDevice, graphicsCommandPool, nullptr);
+	for (auto framebuffer : swapchainFramebuffers)
+	{
+		vkDestroyFramebuffer(mainDevice.logicalDevice, framebuffer, nullptr);
+	}
 	vkDestroyPipeline(mainDevice.logicalDevice, graphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(mainDevice.logicalDevice, pipelineLayout, nullptr);
 	vkDestroyRenderPass(mainDevice.logicalDevice, renderPass, nullptr);
@@ -115,12 +124,7 @@ void VulkanRenderer::createInstance()
 
 	//Create instance
 	//TODO: 2nd parameter is memory management, look at later
-	VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
-
-	if (result != VK_SUCCESS)
-	{
-		throw std::runtime_error("FAILED TO CREATE VULKAN INSTANCE");
-	}
+	checkValidResult(vkCreateInstance(&createInfo, nullptr, &instance), "FAILED TO CREATE VULKAN INSTANCE");
 }
 
 void VulkanRenderer::createDebugCallback()
@@ -134,10 +138,14 @@ void VulkanRenderer::createDebugCallback()
 	callbackCreateInfo.pfnCallback = debugCallback;												// Pointer to callback function itself
 
 	// Create debug callback with custom create function
-	VkResult result = CreateDebugReportCallbackEXT(instance, &callbackCreateInfo, nullptr, &callback);
+	checkValidResult(CreateDebugReportCallbackEXT(instance, &callbackCreateInfo, nullptr, &callback), "DEBUG CALLBACK FAILED");
+}
+
+void VulkanRenderer::checkValidResult(VkResult result, std::string message)
+{
 	if (result != VK_SUCCESS)
 	{
-		throw std::runtime_error("Failed to create Debug Callback!");
+		throw std::runtime_error(message);
 	}
 }
 
@@ -177,11 +185,7 @@ void VulkanRenderer::createLogicalDevice()
 	deviceCreateInfo.pEnabledFeatures = &deviceFeatures;			// Physical Device features Logical Device will use
 
 	// Create the logical device for the given physical device
-	VkResult result = vkCreateDevice(mainDevice.physicalDevice, &deviceCreateInfo, nullptr, &mainDevice.logicalDevice);
-	if (result != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create a Logical Device!");
-	}
+	checkValidResult(vkCreateDevice(mainDevice.physicalDevice, &deviceCreateInfo, nullptr, &mainDevice.logicalDevice), "LOGICAL DEVICE CREATION FAILED");
 
 	//Queues are created at the same time as the device, handle queues
 	vkGetDeviceQueue(mainDevice.logicalDevice, indices.graphicsFamily, 0, &graphicsQueue);
@@ -191,12 +195,7 @@ void VulkanRenderer::createLogicalDevice()
 void VulkanRenderer::createSurface()
 {
 	// Create Surface (creates a surface create info struct, runs the create surface function, returns result)
-	VkResult result = glfwCreateWindowSurface(instance, window, nullptr, &surface);
-
-	if (result != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create a surface!");
-	}
+	checkValidResult(glfwCreateWindowSurface(instance, window, nullptr, &surface), "SURFACE CREATION FAILED");
 }
 
 void VulkanRenderer::createSwapchain()
@@ -261,11 +260,7 @@ void VulkanRenderer::createSwapchain()
 	swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 
 	//Create swapchain
-	VkResult result = vkCreateSwapchainKHR(mainDevice.logicalDevice, &swapchainCreateInfo, nullptr, &swapchain);
-	if (result != VK_SUCCESS)
-	{
-		throw std::runtime_error("FAILED TO CREATE SWAPCHAIN");
-	}
+	checkValidResult(vkCreateSwapchainKHR(mainDevice.logicalDevice, &swapchainCreateInfo, nullptr, &swapchain), "FAILED TO CREATE SWAPCHAIN");
 
 	//Store values
 	swapChainImageFormat = surfaceFormat.format;
@@ -353,11 +348,7 @@ void VulkanRenderer::createRenderPass()
 	renderPassCreateInfo.dependencyCount = static_cast<uint32_t>(subpassDependencies.size());
 	renderPassCreateInfo.pDependencies = subpassDependencies.data();
 
-	VkResult result = vkCreateRenderPass(mainDevice.logicalDevice, &renderPassCreateInfo, nullptr, &renderPass);
-	if (result != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create a Render Pass!");
-	}
+	checkValidResult(vkCreateRenderPass(mainDevice.logicalDevice, &renderPassCreateInfo, nullptr, &renderPass), "RENDER PASS CREATION FAILED");
 }
 
 void VulkanRenderer::createGraphicsPipeline()
@@ -492,11 +483,7 @@ void VulkanRenderer::createGraphicsPipeline()
 
 	// Create Pipeline Layout
 	VkDevice logicalDevice = mainDevice.logicalDevice;
-	VkResult result = vkCreatePipelineLayout(mainDevice.logicalDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout);
-	if (result != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create Pipeline Layout!");
-	}
+	checkValidResult(vkCreatePipelineLayout(mainDevice.logicalDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout), "PIPELINE LAYOUT CREATION FAILED");
 
 	// -- DEPTH STENCIL TESTING --
 	// TODO: Set up depth stencil testing
@@ -523,15 +510,100 @@ void VulkanRenderer::createGraphicsPipeline()
 	pipelineCreateInfo.basePipelineIndex = -1;				// or index of pipeline being created to derive from (in case creating multiple at once)
 
 	// Create Graphics Pipeline
-	result = vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &graphicsPipeline);
-	if (result != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create a Graphics Pipeline!");
-	}
+	checkValidResult(vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &graphicsPipeline), "GRAPHICS PIPELINE CREATION FAILED");
 
 	// Destroy Shader Modules, no longer needed after Pipeline created
 	vkDestroyShaderModule(mainDevice.logicalDevice, fragmentShaderModule, nullptr);
 	vkDestroyShaderModule(mainDevice.logicalDevice, vertexShaderModule, nullptr);
+}
+
+void VulkanRenderer::createFramebuffers()
+{
+	//Resize frame buffer count
+	swapchainFramebuffers.resize(swapChainImages.size());
+	//Create a frame buff for each swapchain image
+	for (size_t i = 0; i < swapchainFramebuffers.size(); ++i)
+	{
+		std::array<VkImageView, 1> attachments =
+		{
+			swapChainImages[i].imageView
+		};
+		VkFramebufferCreateInfo framebufferCreateInfo = {};
+		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferCreateInfo.renderPass = renderPass; //render pass layout the framebuffer will be used with
+		framebufferCreateInfo.attachmentCount = static_cast<uint32_t> (attachments.size());
+		framebufferCreateInfo.pAttachments = attachments.data(); //List of attachments
+		framebufferCreateInfo.width = swapChainExtent.width; //Framebuffer width
+		framebufferCreateInfo.height = swapChainExtent.height; //Framebuffer height
+		framebufferCreateInfo.layers = 1; //Framebuffer layers
+
+		checkValidResult(vkCreateFramebuffer(mainDevice.logicalDevice, &framebufferCreateInfo, nullptr, &swapchainFramebuffers[i]), "FAILED TO CREATE A FRAME BUFFER");
+	}
+}
+
+void VulkanRenderer::createCommandPool()
+{
+	//Get indices of queue families from device
+	QueueFamilyIndices queueFamilyIndices = getQueueFamilies(mainDevice.physicalDevice);
+	VkCommandPoolCreateInfo poolInfo = {};
+	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily; //Queue family that buffers from this command pool will use
+
+	//Create a graphics queue family command pool
+	checkValidResult(vkCreateCommandPool(mainDevice.logicalDevice, &poolInfo, nullptr, &graphicsCommandPool), "FAILED TO CREATE COMMAND POOL");
+}
+
+void VulkanRenderer::createCommandBuffers()
+{
+	//Resize command buffer count to match frame buffers
+	commandBuffers.resize(swapchainFramebuffers.size());
+
+	VkCommandBufferAllocateInfo cbAllocInfo = {};
+	cbAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	cbAllocInfo.commandPool = graphicsCommandPool;
+	cbAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; //Buffer submitted directly to queue
+	cbAllocInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
+	VkResult result = vkAllocateCommandBuffers(mainDevice.logicalDevice, &cbAllocInfo, commandBuffers.data());
+	checkValidResult(result, {});
+}
+
+void VulkanRenderer::recordCommands()
+{
+	//Info about each command buffer starts
+	VkCommandBufferBeginInfo bufferBeginInfo = {};
+	bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	bufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT; //Buffer can be resubmitted before execution
+
+	//Info about render pass start
+	VkRenderPassBeginInfo renderPassBeginInfo = {};
+	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassBeginInfo.renderPass = renderPass; //render pass to start
+	renderPassBeginInfo.renderArea.offset = { 0,0 }; //Start point of render path
+	renderPassBeginInfo.renderArea.extent = swapChainExtent; //Size of region to run render pass
+	VkClearValue clearValues[] =
+	{
+		{0.6f, 0.65f, 0.4f, 1.0f}
+	};
+	renderPassBeginInfo.pClearValues = clearValues; //List of clear values
+	renderPassBeginInfo.clearValueCount = 1;
+
+	for (size_t i = 0; i < commandBuffers.size(); ++i)
+	{
+		renderPassBeginInfo.framebuffer = swapchainFramebuffers[i];
+		//Start recording commands to command buffer
+		checkValidResult(vkBeginCommandBuffer(commandBuffers[i], &bufferBeginInfo), "RECORD TO COMMAND BUFFER FAILED");
+		vkCmdBeginRenderPass(commandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		//Bind Pipeline to be used in render pass
+		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
+		//Execute Pipeline
+		vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+
+		//End recording commands to command buffer
+		vkCmdEndRenderPass(commandBuffers[i]);
+		checkValidResult(vkEndCommandBuffer(commandBuffers[i]), "STOP RECORD TO COMMAND BUFFER FAILED");
+	}
 }
 
 void VulkanRenderer::getPhysicalDevice()
@@ -543,7 +615,7 @@ void VulkanRenderer::getPhysicalDevice()
 	//Check for devices that support vulkan
 	if (deviceCount == 0)
 	{
-		throw std::runtime_error("Can't find GPUs that support Vulkan Instance!");
+		throw std::runtime_error("NO GPU FOUND THAT SUPPORT VULKAN INSTANCE");
 	}
 
 	//Get list of physical devices
@@ -666,6 +738,7 @@ bool VulkanRenderer::checkValidationLayerSupport()
 
 	return true;
 }
+
 bool VulkanRenderer::checkDeviceSuitable(VkPhysicalDevice device)
 {
 	/*
@@ -855,11 +928,8 @@ VkImageView VulkanRenderer::createImageView(VkImage image, VkFormat format, VkIm
 
 	//Create image view
 	VkImageView imageView;
-	VkResult result = vkCreateImageView(mainDevice.logicalDevice, &viewCreateInfo, nullptr, &imageView);
-	if (result != VK_SUCCESS)
-	{
-		throw std::runtime_error("FAILED TO CREATE IMAGEVIEW");
-	}
+	checkValidResult(vkCreateImageView(mainDevice.logicalDevice, &viewCreateInfo, nullptr, &imageView), "IMAGEVIEW CREATION FAILED");
+
 	return imageView;
 }
 
@@ -872,10 +942,6 @@ VkShaderModule VulkanRenderer::createShaderModule(const std::vector<char>& code)
 	shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());	//Pointer to code
 
 	VkShaderModule shaderModule;
-	VkResult result = vkCreateShaderModule(mainDevice.logicalDevice, &shaderModuleCreateInfo, nullptr, &shaderModule);
-	if (result != VK_SUCCESS)
-	{
-		throw std::runtime_error("FAILED TO CREATE SHADER MODULE");
-	}
+	checkValidResult(vkCreateShaderModule(mainDevice.logicalDevice, &shaderModuleCreateInfo, nullptr, &shaderModule), "SHADER MODULE CREATION FAILED");
 	return shaderModule;
 }

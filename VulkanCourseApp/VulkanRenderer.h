@@ -36,6 +36,8 @@ private:
 	VkSurfaceKHR surface;
 	VkSwapchainKHR swapchain;
 	std::vector<SwapchainImage> swapChainImages;
+	std::vector<VkFramebuffer> swapchainFramebuffers;
+	std::vector<VkCommandBuffer> commandBuffers;
 
 	// - Pipeline
 	VkPipeline graphicsPipeline;
@@ -46,6 +48,8 @@ private:
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
 
+	// - Pools
+	VkCommandPool graphicsCommandPool;
 	//----------------------Vulkan Functions------------------------
 
 	//Create Functions
@@ -56,6 +60,13 @@ private:
 	void createSwapchain();
 	void createRenderPass();
 	void createGraphicsPipeline();
+	void createFramebuffers();
+	void createCommandPool();
+
+	void createCommandBuffers();
+
+	//Record functions
+	void recordCommands();
 
 	//Get Functions
 	void getPhysicalDevice();
@@ -66,7 +77,7 @@ private:
 	bool checkInstanceExtensionSupport(std::vector<const char*>* checkExtensions);
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 	bool checkValidationLayerSupport();
-
+	void checkValidResult(VkResult result, std::string message);
 	bool checkDeviceSuitable(VkPhysicalDevice device);
 
 	//Getter Functions
@@ -74,9 +85,9 @@ private:
 	SwapChainDetails getSwapChainDetails(VkPhysicalDevice device);
 
 	// -- Choose Functions
-	VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &formats);
+	VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats);
 	VkPresentModeKHR chooseBestPresentationMode(const std::vector<VkPresentModeKHR> presentationModes);
-	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &surfaceCapabilities);
+	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& surfaceCapabilities);
 
 	//Create Functions
 	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
