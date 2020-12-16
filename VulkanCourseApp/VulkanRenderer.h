@@ -23,7 +23,7 @@ private:
 	GLFWwindow* window;
 	int currentFrame = 0;
 	//Scene
-	Mesh firstMesh;
+	std::vector<Mesh> meshList;
 
 	//===========Components=================
 	//Main
