@@ -2,6 +2,8 @@
 #include <vector>
 #include <fstream>
 
+const int MAX_FRAME_DRAWS = 2;
+
 //Indices of Queue Families (if they exist)
 struct QueueFamilyIndices
 {

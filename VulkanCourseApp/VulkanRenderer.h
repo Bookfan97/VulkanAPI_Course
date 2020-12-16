@@ -16,11 +16,12 @@ class VulkanRenderer
 public:
 	VulkanRenderer();
 	int init(GLFWwindow* newWindow);
+	void draw();
 	void cleanup();
 	~VulkanRenderer();
 private:
 	GLFWwindow* window;
-
+	int currentFrame = 0;
 	//===========Components=================
 	//Main
 	VkInstance instance;
@@ -50,6 +51,11 @@ private:
 
 	// - Pools
 	VkCommandPool graphicsCommandPool;
+
+	//Synchronization
+	std::vector<VkSemaphore> imageAvailable;
+	std::vector<VkSemaphore> renderFinished;
+	std::vector<VkFence> drawFences;
 	//----------------------Vulkan Functions------------------------
 
 	//Create Functions
@@ -62,8 +68,8 @@ private:
 	void createGraphicsPipeline();
 	void createFramebuffers();
 	void createCommandPool();
-
 	void createCommandBuffers();
+	void createSynchronization();
 
 	//Record functions
 	void recordCommands();

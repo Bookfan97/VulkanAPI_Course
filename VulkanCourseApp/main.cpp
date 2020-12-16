@@ -42,6 +42,7 @@ int main()
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
+		vulkanRenderer.draw();
 	}
 
 	//Destroys instance
