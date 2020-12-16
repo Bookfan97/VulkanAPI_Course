@@ -8,7 +8,7 @@
 #include <set>
 #include <algorithm>
 #include <array>
-
+#include "Mesh.h"
 #include "VulkanValidation.h"
 
 class VulkanRenderer
@@ -22,6 +22,9 @@ public:
 private:
 	GLFWwindow* window;
 	int currentFrame = 0;
+	//Scene
+	Mesh firstMesh;
+
 	//===========Components=================
 	//Main
 	VkInstance instance;
@@ -83,7 +86,6 @@ private:
 	bool checkInstanceExtensionSupport(std::vector<const char*>* checkExtensions);
 	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 	bool checkValidationLayerSupport();
-	void checkValidResult(VkResult result, std::string message);
 	bool checkDeviceSuitable(VkPhysicalDevice device);
 
 	//Getter Functions

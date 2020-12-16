@@ -1,9 +1,18 @@
 #pragma once
 #include <vector>
 #include <fstream>
+#include <glm/glm.hpp>
 
 const int MAX_FRAME_DRAWS = 2;
 
+
+inline void checkValidResult(VkResult result, std::string message)
+{
+	if (result != VK_SUCCESS)
+	{
+		throw std::runtime_error(message);
+	}
+}
 //Indices of Queue Families (if they exist)
 struct QueueFamilyIndices
 {
@@ -59,3 +68,9 @@ static std::vector<char> readFile(const std::string& filename)
 
 	return fileBuffer;
 }
+
+struct Vertex
+{
+	glm::vec3 pos;
+	glm::vec3 col;
+};
