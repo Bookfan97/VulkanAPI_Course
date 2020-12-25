@@ -5,7 +5,7 @@
 #include <vector>
 #include "Utilities.h"
 
-struct UboModel
+struct Model
 {
 	glm::mat4 model;
 };
@@ -17,7 +17,7 @@ public:
 	Mesh();
 	Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue, VkCommandPool transferCommandPool, std::vector<Vertex>* vertices, std::vector<uint32_t>* indices);
 	void setModel(glm::mat4 newModel);
-	UboModel getModel();
+	Model getModel();
 	int getVertexCount();
 	VkBuffer getVertexBuffer();
 	int getIndexCount();
@@ -25,7 +25,7 @@ public:
 	void destroyBuffers();
 	~Mesh();
 private:
-	UboModel uboModel;
+	Model model;
 	int vertexCount;
 	VkBuffer vertexBuffer;
 	VkPhysicalDevice physicalDevice;
