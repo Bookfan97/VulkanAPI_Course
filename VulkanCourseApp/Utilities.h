@@ -4,8 +4,9 @@
 #include <fstream>
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
-const int MAX_FRAME_DRAWS = 2;
 
+const int MAX_FRAME_DRAWS = 2;
+const int MAX_OBJECTS = 2;
 
 static void checkValidResult(VkResult result, std::string message)
 {
